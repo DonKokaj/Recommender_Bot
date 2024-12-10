@@ -9,106 +9,81 @@
 <body>
     <h1>Voiceflow Chatbot with Multiple Extensions and Custom Forms</h1>
 
-    <!-- Custom Button Extension Script -->
-    
     <script>
-      const CustomButtonExtension = {
-        name: 'CustomButtons',
+      
+      let disclaimerShown = false; // Global flag to track if the disclaimer has been shown
+
+      const RemoveDisclaimerExtension = {
+        name: 'removeDisclaimer',
         type: 'response',
-        match: ({ trace }) =>
-          trace.type === 'Custom_buttons' || trace.payload.name === 'Custom_buttons',
+        match: ({ trace }) => true, // Ensure the extension is always active
         render: ({ trace, element }) => {
-          console.log("Custom button step detected."); // Debugging log
-  
-          // Target the Voiceflow widget root and apply styles specifically for this step
-          const voiceflowWidget = document.querySelector('.vfrc-widget');
-          if (voiceflowWidget) {
-            voiceflowWidget.style.backgroundColor = '#ffffff';
-            voiceflowWidget.style.boxShadow = 'none';
+          // Check if the disclaimer has already been shown in this conversation
+          if (disclaimerShown) {
+            return; // Exit if the disclaimer has already been shown
           }
-  
-          // Individual button containers for each button
-          const buttonContainer = document.createElement('div');
-          buttonContainer.innerHTML = `
-            <style>
-              .button-container {
-                background-color: #ffffff;
-                border: 2px solid #007bff;
-                border-radius: 20px;
-                margin: 10px 0;
-                display: flex;
-                justify-content: center;
-              }
-              .custom-button {
-                color: #007bff;
-                background-color: #ffffff;
-                border: none;
-                font-size: 14px;
-                font-family: Arial, sans-serif;
-                border-radius: 20px;
-                cursor: pointer;
-                padding: 10px 20px;
-                text-align: center;
-                transition: background-color 0.3s, color 0.3s;
-              }
-              .custom-button:hover {
-                background-color: #007bff;
-                color: #ffffff;
-              }
-              .tooltip {
-                display: none;
-                position: absolute;
-                background-color: #ffffff;
-                color: #007bff;
-                border-radius: 4px;
-                padding: 5px;
-                font-size: 12px;
-                top: -30px;
-                left: 50%;
-                transform: translateX(-50%);
-                border: 1px solid #007bff;
-              }
-              .button-container:hover .tooltip {
-                display: block;
-              }
-            </style>
-            <div class="button-container">
-                <button class="custom-button" data-button="Decision Journey">Decision Journey</button>
-                <span class="tooltip">Get a tailored recommendation</span>
-            </div>
-            <div class="button-container">
-                <button class="custom-button" data-button="FAQ AI/Automation Platform">FAQ AI/Automation Platform</button>
-                <span class="tooltip">General Info about AI/Automation</span>
-            </div>
-            <div class="button-container">
-                <button class="custom-button" data-button="Why Service Transformation">Why Service Transformation</button>
-                <span class="tooltip">Available ST Packages</span>
-            </div>
-          `;
-  
-          element.appendChild(buttonContainer);
-  
-          const buttons = buttonContainer.querySelectorAll('.custom-button');
-          buttons.forEach(button => {
-            button.addEventListener('click', () => {
-              const buttonName = button.getAttribute('data-button');
-  
-              window.voiceflow.chat.interact({
-                type: 'complete',
-                payload: { selectedButton: buttonName },
-              });
-  
-              buttonContainer.remove();
-  
-              if (voiceflowWidget) {
-                voiceflowWidget.style.backgroundColor = '';
-                voiceflowWidget.style.boxShadow = '';
-              }
+
+          // Set the flag to true so it won't render again
+          disclaimerShown = true;
+
+          // Create the container for the button with the text
+          const disclaimerContainer = document.createElement('div');
+          disclaimerContainer.style.display = 'flex';
+          disclaimerContainer.style.flexDirection = 'column';
+          disclaimerContainer.style.alignItems = 'center';
+          disclaimerContainer.style.margin = '10px 0';
+          disclaimerContainer.style.padding = '10px';
+          disclaimerContainer.style.backgroundColor = '#f9f9f9';
+          disclaimerContainer.style.borderRadius = '8px';
+          disclaimerContainer.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+          disclaimerContainer.style.textAlign = 'center';
+
+          // Add the disclaimer text
+          const disclaimerText = document.createElement('p');
+          disclaimerText.textContent =
+            'Disclaimer: Please note that all information and recommendations regarding specific platforms and tools are based on our own experience. For the most accurate and up-to-date information, we recommend contacting the platforms directly or visiting their websites.';
+          disclaimerText.style.marginBottom = '10px';
+          disclaimerText.style.fontSize = '14px';
+          disclaimerText.style.color = '#333';
+
+          // Create the button for removing the disclaimer
+          const removeButton = document.createElement('button');
+          removeButton.textContent = 'Remove Disclaimer';
+          removeButton.style.padding = '10px 20px';
+          removeButton.style.border = 'none';
+          removeButton.style.backgroundColor = '#ff4d4f';
+          removeButton.style.color = 'white';
+          removeButton.style.borderRadius = '5px';
+          removeButton.style.cursor = 'pointer';
+          removeButton.style.fontSize = '14px';
+
+          // Attach click event to the button
+          removeButton.addEventListener('click', () => {
+            // Remove the disclaimer container
+            disclaimerContainer.remove();
+
+            // Trigger the Voiceflow bot to move to the next step
+            window.voiceflow.chat.interact({
+              type: 'text', // or 'complete', depending on your Voiceflow configuration
+              payload: { message: 'Remove Disclaimer' }, // Customize payload as needed
             });
+
+            console.log('Disclaimer removed and Voiceflow advanced');
           });
+
+          // Append the text and button to the container
+          disclaimerContainer.appendChild(disclaimerText);
+          disclaimerContainer.appendChild(removeButton);
+
+          // Append the container to the chatbot UI
+          element.appendChild(disclaimerContainer);
         },
       };
-      </script>
+
+
+    </script>
+    
+    
 
     <!-- PDF Creator Extension Script -->
     <script>
@@ -359,10 +334,10 @@
     const questions = [
       { text: 'Select one or multiple options', name: 'goal', options: [
           'Communicate with end users', 
-          'Support communication with employees', 
           'Assist employees without direct interaction', 
           'Automate repetitive tasks', 
-          'Make decisions and implement solutions'] }
+          'Make decisions and implement solutions',
+          'Not sure',] }
     ];
 
     return questions.map(q => `
@@ -382,20 +357,17 @@
 
   function generateQuestions2() {
     const questions = [
-      { text: 'What are the capabilities you need?', name: 'capabilities', options: [
+      { text: 'Select one or multiple options', name: 'capabilities', options: [
           'Understand human language', 
           'Generate human-like responses', 
           'Answer questions using specific company knowledge', 
-          'Learn and update from custom knowledge sources, structured (databases, spreadsheets)', 
-          'Learn and update from custom knowledge sources, unstructured (email inboxes, chat history)', 
-          'Access information from live knowledge sources that update frequently', 
-          'Summarize text or key information', 
+          'Learn and update from custom knowledge sources, structured and unstructured(databases, spreadsheets, chat history)', 
+          'Summarize text or information', 
           'Recommend solutions or actions', 
-          'Update or modify database records and other sources', 
           'Generate new content', 
-          'Initiate actions (place orders, schedule appointments, process payments, etc.)', 
-          'Send emails to users or team members', 
-          'Automate simple repetitive straightforward processes that don’t require advanced thinking and decision making'] }
+          'Initiate actions (place orders, schedule appointments, process payments, send emails etc.)', 
+          'Automate simple repetitive straightforward processes that don’t require advanced thinking and decision making',
+          'Not sure'] }
     ];
 
     return questions.map(q => `
@@ -414,20 +386,25 @@
   }
   </script>
 
+
+
     <!-- Voiceflow Chat Widget Script with All Extensions -->
     <script type="text/javascript">
       (function(d, t) {
           var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
           v.onload = function() {
             window.voiceflow.chat.load({
-              verify: { projectID: '67373fc5863bc8c813def169' },
+              verify: { projectID: '675058da3cf32042dbfc3fab' },
               url: 'https://general-runtime.voiceflow.com',
               versionID: 'production',
+              allowDangerousHTML: true, /* Enable dangerous HTML elements */
               assistant: {
                 extensions: [
-                  CustomButtonExtension, pdfCreatorExtension, freeTextToggleExtension, 
-                  CustomFormExtension1, CustomFormExtension2
+                  pdfCreatorExtension, freeTextToggleExtension, 
+                  CustomFormExtension1, CustomFormExtension2, RemoveDisclaimerExtension
                 ],
+                stylesheet: 'test.css' // Reference your custom CSS file here
+                
               }
             });
           };
